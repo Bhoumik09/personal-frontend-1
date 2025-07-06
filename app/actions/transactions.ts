@@ -1,6 +1,6 @@
 "use server";
 import axios from "axios";
-import { Budget, Transaction } from "@/types/finance";
+import { Transaction } from "@/types/finance";
 import { backend_url } from "@/lib/backend";
 export async function getAllTransactions(): Promise<{
   msg: string;
@@ -22,6 +22,7 @@ export async function getCategories(): Promise<{
     categoryData: { id: string; name: string }[];
   };
 }
+
 export async function addTransactionToDB({
   transactionData,
 }: {
@@ -34,4 +35,14 @@ export async function addTransactionToDB({
     }
   );
   return response.data as { msg: string, transactionDetail:Transaction };
+}
+export async function deleteTransactionFromDB({
+ id
+}: {
+  id:string;
+}): Promise<{ msg: string }> {
+  const response = await axios.delete(
+    `${backend_url}/transaction/${id}`
+  );
+  return response.data as { msg: string};
 }

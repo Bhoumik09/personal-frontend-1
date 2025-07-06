@@ -23,20 +23,31 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import type { Transaction } from "@/types/finance"
+import { useMutation } from "@tanstack/react-query"
+import { deleteTransactionFromDB } from "@/app/actions/transactions"
 
 export function TransactionList() {
   const { transactions, isLoading, setSelectedTransaction, deleteTransaction } = useFinanceContext()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">("all")
   const [sortBy, setSortBy] = useState<"date" | "amount">("date")
-
+  const { mutateAsync } = useMutation({
+    mutationFn: deleteTransactionFromDB,
+    mutationKey: ['deleteTransaction'],
+    onSuccess: (_, variables) => {
+      deleteTransaction(variables.id)
+      toast.success("Transaction deleted successfully!");
+    },
+    onError:()=>{
+      toast.error("Unable to delete the transaction due to server issues")
+    }
+  })
   const handleEdit = (transaction: Transaction) => {
     setSelectedTransaction(transaction)
   }
 
-  const handleDelete = (id: string) => {
-    deleteTransaction(id)
-    toast.success("Transaction deleted successfully!")
+  const handleDelete =async (id: string) => {
+    await mutateAsync({id});
   }
 
   if (isLoading) {
@@ -142,9 +153,8 @@ export function TransactionList() {
             >
               <div className="flex items-center gap-3 flex-1">
                 <div
-                  className={`p-2 rounded-full ${
-                    transaction.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                  }`}
+                  className={`p-2 rounded-full ${transaction.type === "income" ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                    }`}
                 >
                   {transaction.type === "income" ? (
                     <TrendingUp className="h-4 w-4" />

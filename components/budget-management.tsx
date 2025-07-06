@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CATEGORIES, type Budget } from "@/types/finance"
+import { type Budget } from "@/types/finance"
 import { formatCurrency, getMonthKey } from "@/lib/finance-utils"
 import { useFinanceContext } from "@/contexts/finance-context"
 import { Plus, Edit, Trash2, AlertTriangle, CheckCircle, TrendingUp } from "lucide-react"
@@ -18,28 +18,25 @@ import { CHART_COLORS } from "@/lib/chart-colors"
 import { toast } from "sonner"
 import { getCategories } from "@/app/actions/transactions"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { addBudgetToDB } from "@/app/actions/budgets"
+import { addBudgetToDB, deleteBudgetFromDB } from "@/app/actions/budgets"
 
 export function BudgetManagement() {
   const { budgets, transactions, currentMonth, addBudget, updateBudget, deleteBudget, error } = useFinanceContext()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null)
-  const { isError: categoryError, isSuccess: categorySuccess, isLoading: isCategoryLoading, data: categoryData } = useQuery({
+  const { isLoading: isCategoryLoading, data: categoryData } = useQuery({
     queryKey: ['getCategories2'],
     queryFn: getCategories,
     staleTime: Infinity
   })
-  const mutatetionSucess=(addBudget:(budget:Omit<Budget, 'id'>)=>void, budgetData:Budget|undefined)=>{
-    if(budgetData){
-      addBudget(budgetData)
-    }
-    toast.success('Budget created successfully')
-  }
-  const {isSuccess, isPending ,mutateAsync, data:budgetData }=useMutation({
-    mutationKey:['addBudget'],
-    mutationFn:addBudgetToDB,
-    onSuccess:()=>{mutatetionSucess(addBudget, budgetData?.budgetDetail)},
-    onError:()=>{
+  const { isPending, mutateAsync } = useMutation({
+    mutationKey: ['addBudget'],
+    mutationFn: addBudgetToDB,
+    onSuccess: (data) => {
+      addBudget(data.budgetDetail);
+      toast.success('Budget created successfully')
+    },
+    onError: () => {
       toast.error("Error occured while adding the budget")
     }
   })
@@ -66,7 +63,7 @@ export function BudgetManagement() {
     if (!formData.category || !formData.amount || !formData.month) return
 
     const budgetData = {
-      category: categoryData?.categoryData.filter((category)=>category.id==formData.category)[0]!,
+      category: categoryData?.categoryData.filter((category) => category.id == formData.category)[0]!,
       amount: Number.parseFloat(formData.amount),
       month: formData.month,
     }
@@ -76,14 +73,15 @@ export function BudgetManagement() {
         updateBudget(editingBudget.id, budgetData)
         toast.success("Budget updated successfully!")
       } else {
-        await mutateAsync({budgetData})
-        
+        const data = await mutateAsync({ budgetData })
+        console.log(data.budgetDetail)
       }
 
       setFormData({ category: "", amount: "", month: currentMonth })
       setEditingBudget(null)
       setIsDialogOpen(false)
     } catch (error) {
+      console.log(error);
       toast.error("An error occurred while saving the budget")
     }
   }
@@ -97,10 +95,19 @@ export function BudgetManagement() {
     })
     setIsDialogOpen(true)
   }
-
-  const handleDelete = (id: string) => {
-    deleteBudget(id)
-    toast.success("Budget deleted successfully!")
+  const { mutateAsync: budgetDeletionMutation } = useMutation({
+    mutationFn: deleteBudgetFromDB,
+    mutationKey: ['deleteBudgets'],
+    onSuccess: (_, variables) => {
+      deleteBudget(variables.id)
+      toast.success("Deleted the budget successfully")
+    },
+    onError:()=>{
+      toast.error('There was an error in deleting the budget')
+    }
+  })
+  const handleDelete = async (id: string) => {
+    await budgetDeletionMutation({ id })
   }
 
   const getProgressColor = (percentage: number) => {

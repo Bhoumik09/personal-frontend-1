@@ -15,6 +15,17 @@ export async function addBudgetToDB({
   );
   return response.data as { msg: string, budgetDetail:Budget };
 }
+export async function deleteBudgetFromDB({
+ id
+}: {
+  id:string;
+}): Promise<{ msg: string  }> {
+  console.log(id);
+  const response = await axios.delete(
+    `${backend_url}/budget/${id}`
+  );
+  return response.data as { msg: string };
+}
 export async function getAllBudgets(): Promise<{
   msg: string;
   BudgetData: Budget[];

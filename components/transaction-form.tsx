@@ -27,17 +27,20 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     queryFn: getCategories,
     staleTime: Infinity
   })
-  const { isSuccess, isError, isPending, mutateAsync, data } = useMutation({ mutationFn: addTransactionToDB, mutationKey: ['addTransaction'] , onSuccess:()=>{
-        toast.success("Transaction created successfully!")
-        // Reset form for new transactions
-        setFormData({
-          amount: "",
-          date: new Date().toISOString().split("T")[0],
-          description: "",
-          category: "",
-          type: "expense",
-        })
-  }})
+  const { isPending, mutateAsync } = useMutation({
+    mutationFn: addTransactionToDB, mutationKey: ['addTransaction'], onSuccess: (data) => {
+      toast.success("Transaction created successfully!")
+      // Reset form for new transactions
+      addTransaction(data.transactionDetail)
+      setFormData({
+        amount: "",
+        date: new Date().toISOString().split("T")[0],
+        description: "",
+        category: "",
+        type: "expense",
+      })
+    }
+  })
   const [formData, setFormData] = useState({
     amount: "",
     date: new Date().toISOString().split("T")[0],
@@ -98,9 +101,6 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
     setIsSubmitting(true)
 
     try {
-      // Simulate async operation
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
       const transactionData = {
         amount: Number.parseFloat(formData.amount),
         date: formData.date,
@@ -114,10 +114,7 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
         setSelectedTransaction(null)
       } else {
         await mutateAsync({ transactionData });
-        if(isSuccess){
-          console.log(data.transactionDetail)
-          addTransaction(data.transactionDetail);
-        }
+
 
       }
 
@@ -224,15 +221,15 @@ export function TransactionForm({ onSuccess }: TransactionFormProps) {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {isCategoryLoading ? 
-                  <div>
-                    <Loader2 size={10} className="animate-spin"/>
-                  </div>
-                  :categoryData?.categoryData?.map((category) => (
-                    <SelectItem key={category?.id} value={category?.id}>
-                      {category?.name}
-                    </SelectItem>
-                  ))}
+                  {isCategoryLoading ?
+                    <div>
+                      <Loader2 size={10} className="animate-spin" />
+                    </div>
+                    : categoryData?.categoryData?.map((category) => (
+                      <SelectItem key={category?.id} value={category?.id}>
+                        {category?.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               {errors.category && (
