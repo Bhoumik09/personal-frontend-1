@@ -1,4 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Transactions and budget tracking website and gives important insights about them
+U can create and delete transactions
+Update will be integrated in future
 
 ## Getting Started
 
